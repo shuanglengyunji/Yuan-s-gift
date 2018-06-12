@@ -140,25 +140,25 @@ void SysTick_Handler(void)
 
 /**
   * @brief  This function handles RTC interrupt request.
+			RTC中断服务函数（RTC的中断都会触发到这里）
   * @param  None
   * @retval None
   */
 void RTC_IRQHandler(void)
 {
-	  if (RTC_GetITStatus(RTC_IT_SEC) != RESET)
-	  {
-	    /* Clear the RTC Second interrupt */
-	    RTC_ClearITPendingBit(RTC_IT_SEC);
-	
-	    /* Enable time update */
-	    TimeDisplay = 1;
-	
-	    /* Wait until last write operation on RTC registers has finished */
-	    RTC_WaitForLastTask();
-	  }
+	if (RTC_GetITStatus(RTC_IT_SEC) != RESET)		//判断是否为秒中断
+	{
+		/* Clear the RTC Second interrupt */
+		RTC_ClearITPendingBit(RTC_IT_SEC);
+
+		/* Enable time update */
+		TimeDisplay = 1;			//标志位置1
+
+		/* Wait until last write operation on RTC registers has finished */
+		RTC_WaitForLastTask();
+	}
 }
 
-/* 串口1接收中断 */
 /* 串口1接收中断 */
 void USART1_IRQHandler(void)
 {

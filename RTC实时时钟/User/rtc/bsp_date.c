@@ -26,7 +26,7 @@ void GregorianDay(struct rtc_time * tm)
 	/*计算从公元元年到计数的前一年之中一共经历了多少个闰年*/
 	leapsToDate = lastYear/4 - lastYear/100 + lastYear/400;      
 
-     /*如若计数的这一年为闰年，且计数的月份在2月之后，则日数加1，否则不加1*/
+    /*如若计数的这一年为闰年，且计数的月份在2月之后，则日数加1，否则不加1*/
 	if((tm->tm_year%4==0) &&
 	   ((tm->tm_year%100!=0) || (tm->tm_year%400==0)) &&
 	   (tm->tm_mon>2)) {

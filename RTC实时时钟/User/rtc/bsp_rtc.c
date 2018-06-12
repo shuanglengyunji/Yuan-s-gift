@@ -1,12 +1,10 @@
 #include "bsp_rtc.h"
 
-/* 秒中断标志，进入秒中断时置1，当时间被刷新之后清0 */
-__IO uint32_t TimeDisplay = 0;
+
 
 /*星期，生肖用文字ASCII码*/
 uint8_t const *WEEK_STR[] = {"日", "一", "二", "三", "四", "五", "六"};
 uint8_t const *zodiac_sign[] = {"猪", "鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊", "猴", "鸡", "狗"};
-
 
 /*
  * 函数名：NVIC_Configuration
@@ -44,15 +42,18 @@ void RTC_CheckAndConfig(struct rtc_time *tm)
 	   则需重新配置时间并询问用户调整时间 */
 	if (BKP_ReadBackupRegister(BKP_DR1) != 0xA5A5)
 	{
-		printf("\r\n\r\n RTC not yet configured....");
+		//printf("\r\n\r\n RTC not yet configured....");
+		printf(" RTC未初始化，需要对RTC进行配置.\r\n\r\n ");
 
 		/* RTC Configuration */
-		RTC_Configuration();
+		RTC_Configuration();	//初始化RTC，配置时钟源，使能秒中断
 		
-		printf("\r\n\r\n RTC configured....");
+		//printf("\r\n\r\n RTC configured....");
+		printf(" RTC配置完成\r\n\r\n ");
 
-		/* Adjust time by users typed on the hyperterminal */
-		Time_Adjust(tm);
+		/* Adjust time by users typed on the hyperterminal 
+		   向计数器里设置时间 */
+		Time_Adjust(tm);	//这个函数已经更改，现在的作用是直接给计时器置0
 
 		BKP_WriteBackupRegister(BKP_DR1, 0xA5A5);	//设置为0xA5A5，表示初始值已经置入
 	}
@@ -62,15 +63,18 @@ void RTC_CheckAndConfig(struct rtc_time *tm)
 		/*检查是否掉电重启*/
 		if (RCC_GetFlagStatus(RCC_FLAG_PORRST) != RESET)
 		{
-		    printf("\r\n\r\n Power On Reset occurred....");
+		    //printf("\r\n\r\n Power On Reset occurred....");
+			printf(" 系统掉电重启 \r\n\r\n ");
 		}
 		/*检查是否Reset复位*/
 		else if (RCC_GetFlagStatus(RCC_FLAG_PINRST) != RESET)
 		{
-			printf("\r\n\r\n External Reset occurred....");
+			//printf("\r\n\r\n External Reset occurred....");
+			printf(" 系统复位启动 \r\n\r\n ");
 		}
-	
-		printf("\r\n No need to configure RTC....");
+		
+		//printf("\r\n No need to configure RTC....");
+		printf(" RTC计数工作正常\r\n ");
 		
 		/*等待寄存器同步*/
 		RTC_WaitForSynchro();
@@ -290,29 +294,6 @@ void Time_Regulate(struct rtc_time *tm)
 }
 
 /*
- * 函数名：Time_Show
- * 描述  ：在超级终端中显示当前时间值
- * 输入  ：无
- * 输出  ：无
- * 调用  ：外部调用
- */ 
-void Time_Show(struct rtc_time *tm)
-{	 
-	/* Infinite loop */
-	while (1)
-	{
-		/* 每过1s */
-		if (TimeDisplay == 1)
-		{
-			/* Display current time */
-			Time_Display(RTC_GetCounter(),tm);
-			TimeDisplay = 0;
-		}
-	}
-}
-
-
-/*
  * 函数名：Time_Adjust
  * 描述  ：时间调节
  * 输入  ：用于读取RTC时间的结构体指针
@@ -321,20 +302,17 @@ void Time_Show(struct rtc_time *tm)
  */
 void Time_Adjust(struct rtc_time *tm)
 {
-	  /* Wait until last write operation on RTC registers has finished */
-	  RTC_WaitForLastTask();
+	/* Wait until last write operation on RTC registers has finished */
+	RTC_WaitForLastTask();
 	
-	  /* Get time entred by the user on the hyperterminal */
-	  Time_Regulate(tm);
-	  
-	  /* Get wday */
-	  GregorianDay(tm);
+//	Time_Regulate(tm);	/* Get time entred by the user on the hyperterminal 从串口超级终端获取时间（由用户从超级终端输入），存入tm指向的结构体*/
+//	GregorianDay(tm);	/* Get wday */
+//	RTC_SetCounter(mktimev(tm));	/* 修改当前RTC计数寄存器内容 */
+	
+	RTC_SetCounter(0);	//时间直接从0开始读秒
 
-	  /* 修改当前RTC计数寄存器内容 */
-	  RTC_SetCounter(mktimev(tm));
-
-	  /* Wait until last write operation on RTC registers has finished */
-	  RTC_WaitForLastTask();
+	/* Wait until last write operation on RTC registers has finished */
+	RTC_WaitForLastTask();
 }
 
 /*
@@ -376,5 +354,7 @@ void Time_Display(uint32_t TimeVar,struct rtc_time *tm)
 					WEEK_STR[tm->tm_wday], tm->tm_hour, 
 					tm->tm_min, tm->tm_sec);
 }
+
+
 
 /************************END OF FILE***************************************/
