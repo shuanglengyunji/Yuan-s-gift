@@ -4,23 +4,13 @@
 #include "RTC_Time.h" 
 #include <stdio.h>
 
-//=============================================================================
-//函数名称:Delay
-//功能概要:延时函数
-//参数说明:无
-//函数返回:无
-//=============================================================================
-void  Delay (uint32_t nCount)
+uint32_t standby_counter = 0;
+
+void Delay (uint32_t nCount)
 {
   for(; nCount != 0; nCount--);
 }
 
-//=============================================================================
-//函数名称:main
-//功能概要:主函数
-//参数说明:无
-//函数返回:int
-//=============================================================================
 int main(void)
 {
 	LED_GPIO_Config();	//初始化LED
@@ -29,6 +19,15 @@ int main(void)
 	
     while (1)
     {
-		
+		if(standby_counter > 10)
+		{
+			standby_counter = 0;
+			
+			LED0_OFF;
+			USART_Cmd(USART1, DISABLE);//开启USART1
+			
+			//进入待机模式
+			PWR_EnterSTANDBYMode();
+		}
     }
 }
