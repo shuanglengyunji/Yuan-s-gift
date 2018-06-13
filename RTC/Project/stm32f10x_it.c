@@ -138,7 +138,6 @@ void SysTick_Handler(void)
 {
 }
 
-
 /*******************************************************************************
 * Function Name  : RTC_IRQHandler
 * Description    : This function handles RTC global interrupt request.
@@ -150,11 +149,12 @@ void SysTick_Handler(void)
 void RTC_IRQHandler(void)
 {
 	static uint8_t Display;
-	if (RTC_GetITStatus(RTC_IT_SEC) != RESET)
+	if (RTC_GetITStatus(RTC_IT_SEC) != RESET)	//RTC秒中断
 	{
 		/* Clear the RTC Second interrupt */
 		RTC_ClearITPendingBit(RTC_IT_SEC);
 
+		//LED取反
 		if( Display ) 
 		{ 
 			LED0_ON;
@@ -164,6 +164,8 @@ void RTC_IRQHandler(void)
 			LED0_OFF;
 		}
 		Display = ~Display;
+		
+		//输出当前时间
 		Time_Display();
 	}
 }

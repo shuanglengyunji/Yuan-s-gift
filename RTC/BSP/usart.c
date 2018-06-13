@@ -1,11 +1,6 @@
 #include "usart.h"
 
-//=============================================================================
-//函数名称:USART1_Config
-//功能概要:USART1 GPIO 配置,工作模式配置。115200 8-N-1
-//参数说明:无
-//函数返回:无
-//=============================================================================
+///初始化USART1
 void USART1_Config(void)
 {	
     GPIO_InitTypeDef GPIO_InitStructure;	
@@ -32,44 +27,17 @@ void USART1_Config(void)
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;		//使能接收和发送引脚
 	USART_Init(USART1, &USART_InitStructure); //将以上赋完值的结构体带入库函数USART_Init进行初始化
 	
-	USART_ClearFlag(USART1,USART_FLAG_TC);
-	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
-	USART_ITConfig(USART1, USART_IT_TXE, ENABLE);
-	USART_Cmd(USART1, ENABLE);//开启USART1，注意与上面RCC_APB2PeriphClockCmd()设置的区别
+	USART_Cmd(USART1, ENABLE);//开启USART1
 }
 
-//=============================================================================
-//函数名称:fputc
-//功能概要:重定向c库函数printf到USART
-//注意:由printf调用
-//=============================================================================
+///重定向c库函数printf到USART1
 int fputc(int ch, FILE *f)
 {
-//将Printf内容发往串口 
-  USART_SendData(USART1, (unsigned char) ch);
-  while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); 
-  return (ch);
-}
+	/* 发送一个字节数据到USART1 */
+	USART_SendData(USART1, (uint8_t) ch);
+	
+	/* 等待发送完毕 */
+	while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);		
 
-//=============================================================================
-//函数名称:USART1_Putc
-//功能概要:将USART1_Putc（）内容打印到串口
-//=============================================================================
-void USART1_Putc(unsigned char c)
-{
-    USART_SendData(USART1, c);
-    while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET );
-}
-
-//=============================================================================
-//函数名称:USART1_Putc
-//功能概要:将USART1_Putc（）内容打印到串口
-//=============================================================================
-void USART1_Puts(char * str)
-{
-    while(*str)
-    {
-        USART_SendData(USART1, *str++);
-        while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
-    }
+	return (ch);
 }
