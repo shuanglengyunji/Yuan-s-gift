@@ -39,17 +39,17 @@ void RTC_SetTime(uint32_t t)
 *******************************************************************************/
 static void NVIC_Configuration(void)
 {
-  NVIC_InitTypeDef NVIC_InitStructure;
+	NVIC_InitTypeDef NVIC_InitStructure;
 
-  /* Configure one bit for preemption priority */
-  NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+	/* Configure one bit for preemption priority */
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
 
-  /* Enable the RTC Interrupt */
-  NVIC_InitStructure.NVIC_IRQChannel = RTC_IRQn;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-  NVIC_Init(&NVIC_InitStructure);
+	/* Enable the RTC Interrupt */
+	NVIC_InitStructure.NVIC_IRQChannel = RTC_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
 }
 
 /*******************************************************************************
@@ -184,7 +184,18 @@ void RTC_Init(void)
 *******************************************************************************/
 void Time_Display(void)
 {
-	uint32_t time;
+	uint32_t time, day, hour, minute, second;
+	
 	time = RTC_GetTime();
-	printf("Time: %d \r\n", time);
+	
+	printf("运行总秒数：%d，",time);
+	
+	day = time / 86400;		//天
+	time = time % 86400;	//不足1天的剩余秒数
+	hour = time / 3600;		//小时
+	time = time % 3600;		//不足1小时的剩余秒数
+	minute = time / 60;		//分钟
+	second = time % 60;		//秒
+	
+	printf("折合%d天，%d小时，%d分钟，%d秒\r\n", day, hour, minute, second);
 }

@@ -23,7 +23,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_it.h"
-#include "RTC_Time.h" 
+#include "RTC_Time.h"
 #include "led.h"
 
 /** @addtogroup STM32F10x_StdPeriph_Template
@@ -159,11 +159,13 @@ void RTC_IRQHandler(void)
 		//LEDÈ¡·´
 		if( Display ) 
 		{ 
-			LED0_ON;
+			//LED0_ON;
+			LED1_ON;
 		}  
 		else 
 		{
-			LED0_OFF;
+			//LED0_OFF;
+			LED1_OFF;
 		}
 		Display = ~Display;
 		
