@@ -159,15 +159,23 @@ void RTC_IRQHandler(void)
 		//LED取反
 		if( Display ) 
 		{ 
-			//LED0_ON;
+			LED0_ON;
 			LED1_ON;
 		}  
 		else 
 		{
-			//LED0_OFF;
+			LED0_OFF;
 			LED1_OFF;
 		}
 		Display = ~Display;
+		
+		//定时结束处理
+		u32 time = RTC_GetCounter();
+		if(time >= RTC_ALARM_VALUE)
+		{
+			LED0_ON;
+			LED1_ON;
+		}
 		
 		//输出当前时间
 		Time_Display();

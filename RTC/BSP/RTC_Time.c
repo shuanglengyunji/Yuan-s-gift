@@ -1,9 +1,7 @@
 /* Includes ------------------------------------------------------------------*/
-#include "RTC_Time.h" 
+#include "RTC_Time.h"
 
 /* Private define ------------------------------------------------------------*/
-
-//#define RTCClockOutput_Enable		/* RTC Clock/64 is output on tamper pin(PC.13) */
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -53,7 +51,7 @@ static void NVIC_Configuration(void)
 }
 
 /*******************************************************************************
-* Function Name  : NVIC_Configuration
+* Function Name  : RTC_Configuration
 * Description    : Configures the RTC.
 * Input          : None
 * Output         : None
@@ -63,28 +61,39 @@ static void NVIC_Configuration(void)
 static void RTC_Configuration(void)
 {
 	/* Enable PWR and BKP clocks */
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR | RCC_APB1Periph_BKP, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR | RCC_APB1Periph_BKP, ENABLE);	//使能RTC和备份区时钟
 
 	/* Allow access to BKP Domain */
-	PWR_BackupAccessCmd(ENABLE);
+	PWR_BackupAccessCmd(ENABLE);		//允许访问备份区
 
 	/* Reset Backup Domain */
 	BKP_DeInit();
 
+	////////////////////////////////////////////////////////////
+	
+	//将RTC时钟源切换为外部低速时钟源
+	
 	/* Enable LSE */
 	RCC_LSEConfig(RCC_LSE_ON);
+	
 	/* Wait till LSE is ready */
 	while (RCC_GetFlagStatus(RCC_FLAG_LSERDY) == RESET)
 	{}
 
 	/* Select LSE as RTC Clock Source */
 	RCC_RTCCLKConfig(RCC_RTCCLKSource_LSE);
+		
+	////////////////////////////////////////////////////////////
 
+	//启动RTC时钟
+		
 	/* Enable RTC Clock */
 	RCC_RTCCLKCmd(ENABLE);
 
 	/* Wait for RTC registers synchronization */
 	RTC_WaitForSynchro();
+		
+	////////////////////////////////////////////////////////////
 
 	/* Wait until last write operation on RTC registers has finished */
 	RTC_WaitForLastTask();
@@ -96,7 +105,33 @@ static void RTC_Configuration(void)
 	RTC_WaitForLastTask();
 
 	/* Set RTC prescaler: set RTC period to 1sec */
-	RTC_SetPrescaler(32767); /* RTC period = RTCCLK/RTC_PR = (32.768 KHz)/(32767+1) */
+	RTC_SetPrescaler(32767); /* RTC period = RTCCLK/RTC_PR = (32.768 KHz)/(32767+1) */	//设置预分频系数
+
+	/* Wait until last write operation on RTC registers has finished */
+	RTC_WaitForLastTask();
+}
+
+/*******************************************************************************
+* Function Name  : RTC_Access_Configuration
+* Description    : RTC正常工作时，允许被外部复位的系统访问RTC寄存器.
+* Input          : None
+* Output         : None
+* Return         : None
+* Attention		 : None
+*******************************************************************************/
+static void RTC_Access_Configuration(void)
+{
+	/* Enable PWR and BKP clocks */
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR | RCC_APB1Periph_BKP, ENABLE);	//使能RTC和备份区时钟
+
+	/* Allow access to BKP Domain */
+	PWR_BackupAccessCmd(ENABLE);		//允许访问备份区
+	
+	/* Wait until last write operation on RTC registers has finished */
+	RTC_WaitForLastTask();
+	
+	/* Wait for RTC registers synchronization */
+	RTC_WaitForSynchro();	//等待RTC时钟同步
 
 	/* Wait until last write operation on RTC registers has finished */
 	RTC_WaitForLastTask();
@@ -108,66 +143,68 @@ static void RTC_Configuration(void)
 *******************************************************************************/
 void RTC_Init(void)
 {
-
+	printf("\r\n\r\n\r\n");
+	
+	// 上电前RTC未工作，需要初始化RTC
 	if (BKP_ReadBackupRegister(BKP_DR1) != 0xA5A5)
 	{
 		/* Backup data register value is not correct or not yet programmed (when
 		   the first time the program is executed) */
 
-		printf("\r\n\r\nRTC未初始化....\r\n\r\n");
+		printf("上电检测：RTC未初始化\r\n");
 
 		/* RTC Configuration */
 		RTC_Configuration();		//配置RTC工作参数（时钟、中断等）
 
+		/* Set RTC Time Value */
 		RTC_SetTime(0);
+		RTC_WaitForLastTask();
+		
+		/* Set RTC Alarm Value */
+		RTC_SetAlarm(RTC_ALARM_VALUE);
+		RTC_WaitForLastTask();
 
-		/* Adjust time by values entred by the user on the hyperterminal */
-
-		printf("RTC初始化完成....\r\n\r\n");
+		printf("RTC初始化完成\r\n");
 
 		BKP_WriteBackupRegister(BKP_DR1, 0xA5A5);
 	}
-	else
+	else	//上电前RTC已经在工作
 	{
+		printf("上电检测：RTC已经初始化\r\n");
+		
 		/* Check if the Power On Reset flag is set */
 		if (RCC_GetFlagStatus(RCC_FLAG_PORRST) != RESET)
 		{
-			printf("\r\n\r\n发生一次电源上电重启....\r\n\r\n");
+			printf("启动原因：主电源上电r\n");
 		}
 		/* Check if the Pin Reset flag is set */
 		else if (RCC_GetFlagStatus(RCC_FLAG_PINRST) != RESET)
 		{
-			printf("\r\n\r\n发生一次外部复位....\r\n\r\n");
+			printf("启动原因：外部复位\r\n");
 		}
-
-		printf("\r\n\r\n不需要设置RCT....\r\n\r\n");
+		else
+		{
+			printf("启动原因：RTC闹钟唤醒\r\n");
+		}
 		
-		/* Wait for RTC registers synchronization */
-		RTC_WaitForSynchro();
+		/* RTC Access Configuration */
+		RTC_Access_Configuration();
+		
+		/* Set RTC Alarm Value */
+		RTC_SetAlarm(RTC_ALARM_VALUE);
+		
+		/* Wait until last write operation on RTC registers has finished */
+		RTC_WaitForLastTask();
 
 		/* Enable the RTC Second */
-		RTC_ITConfig(RTC_IT_SEC, ENABLE);
+		RTC_ITConfig(RTC_IT_SEC, ENABLE);	//启动RTC秒中断
+		
 		/* Wait until last write operation on RTC registers has finished */
 		RTC_WaitForLastTask();
 	}
 
 	/* NVIC configuration */
 	NVIC_Configuration();
-
-	#ifdef RTCClockOutput_Enable
-		/* Enable PWR and BKP clocks */
-		RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR | RCC_APB1Periph_BKP, ENABLE);
-
-		/* Allow access to BKP Domain */
-		PWR_BackupAccessCmd(ENABLE);
-
-		/* Disable the Tamper Pin */
-		BKP_TamperPinCmd(DISABLE); /* To output RTCCLK/64 on Tamper pin, the tamper
-								 functionality must be disabled */
-
-		/* Enable RTC Clock Output on Tamper Pin */
-		BKP_RTCOutputConfig(BKP_RTCOutputSource_CalibClock);
-	#endif
 
 	/* Clear reset flags */
 	RCC_ClearFlag();
