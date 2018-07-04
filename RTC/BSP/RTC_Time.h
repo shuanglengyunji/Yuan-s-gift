@@ -8,7 +8,7 @@
 #include <string.h>
 
 // RTCƒ÷÷”ªΩ–—÷µ
-#define RTC_ALARM_VALUE	100
+#define RTC_ALARM_VALUE	42949673	// 2^32 / 100 = 42949672.96
 
 /* Private function prototypes -----------------------------------------------*/
 void RTC_Init(void);

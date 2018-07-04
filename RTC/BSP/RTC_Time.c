@@ -202,6 +202,7 @@ void RTC_Init(void)
 		/* Wait until last write operation on RTC registers has finished */
 		RTC_WaitForLastTask();
 	}
+	printf("RTC闹钟触发值为%d，折合%d天\r\n",RTC_ALARM_VALUE,RTC_ALARM_VALUE/3600/24);
 
 	/* NVIC configuration */
 	NVIC_Configuration();
